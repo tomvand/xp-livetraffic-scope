@@ -119,7 +119,7 @@ function get_metar(icao)
         for line in f:lines() do
             local len = icao:len()
             if line:sub(1, len) == icao then
-                metar = nil
+                metar = line
             end
         end
     end
@@ -186,14 +186,19 @@ function draw_scope()
     -- glColor4f(0, 0, 0.5, scope_alpha)
     glColor4f(0, 0, 0, scope_alpha)
     glRectf(0, 0, SCREEN_WIDTH, SCREEN_HIGHT)
-    glColor4f(1.0, 1.0, 1.0, scope_alpha)
+    glColor4f(1.0, 1.0, 1.0, 1.0)
     if scope_apt then
         local y = SCREEN_HIGHT - 60
+        local skipped_first = false
         draw_string_Helvetica_18(xc - yc, y, scope_apt.icao .. " " .. scope_apt.name)
         if scope_apt.metar then
             for metar_i in string.gmatch(scope_apt.metar, "%S+") do
-                y = y + 20
-                draw_string_Helvetica_18(xc - yc, y, metar_i)
+                if not skipped_first then
+                    skipped_first = true
+                else
+                    y = y - 20
+                    draw_string_Helvetica_18(xc - yc, y, metar_i)
+                end
             end
         end
     else
@@ -266,7 +271,7 @@ function draw_scope()
         if active > 0 and math.abs(alt - player_alt) < 10000 then
             glColor4f(1.0, 1.0, 1.0, 1.0)
         else
-            glColor4f(1.0, 1.0, 1.0, (scope_alpha + 1.0) / 2)
+            glColor4f(1.0, 1.0, 1.0, scope_alpha)
         end
         glRectf(xc + x - marker_size, yc + y - marker_size, xc + x + marker_size, yc + y + marker_size)
         local dx = spd * math.sin(math.rad(trk)) / 3600 * vector_length * pix_per_nm
