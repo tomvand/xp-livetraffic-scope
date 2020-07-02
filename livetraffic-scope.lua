@@ -134,6 +134,11 @@ function ltscope_set_icao(icao)
     end
 end
 
+function ltscope_clear_icao()
+    scope_apt = nil
+    return "Cleared selection"
+end
+
 function latlon_to_xypx(ref_lat, ref_lon, lat, lon)
     -- Note: approximate, only for drawing!
     -- https://blog.mapbox.com/fast-geodesic-approximations-with-cheap-ruler-106f229ad016
@@ -297,6 +302,10 @@ function wnd_select_builder()
     imgui.SameLine()
     if imgui.Button("Set") then
         wnd_select_result_msg = ltscope_set_icao(string.upper(wnd_select_icao))
+    end
+    imgui.SameLine()
+    if imgui.Button("Clear") then
+        wnd_select_result_msg = ltscope_clear_icao()
     end
     imgui.TextUnformatted(wnd_select_result_msg)
 end
