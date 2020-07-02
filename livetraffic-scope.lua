@@ -9,6 +9,7 @@ end
 
 -- CONSTANTS
 local aptdat_path = SYSTEM_DIRECTORY .. "Resources" .. DIRECTORY_SEPARATOR .. "default scenery" .. DIRECTORY_SEPARATOR .. "default apt dat" .. DIRECTORY_SEPARATOR .. "Earth nav data" .. DIRECTORY_SEPARATOR .. "apt.dat"
+local metar_path = SYSTEM_DIRECTORY .. "METAR.rwx"
 
 ------------------------------------------------------------------
 -- apt.dat reader
@@ -94,6 +95,7 @@ function get_airport(icao)
                 end
                 apt_table.lat = apt_lat
                 apt_table.lon = apt_lon
+                apt_table.metar = get_metar(icao)
                 logMsg(apt_table.icao .. " lat=" .. tostring(apt_table.lat) .. ", lon=" .. tostring(apt_table.lon))
                 break
             end
@@ -106,6 +108,23 @@ function get_airport(icao)
     return apt_table
 end
 
+
+------------------------------------------------------------------
+-- METAR.rwx reader
+------------------------------------------------------------------
+function get_metar(icao)
+    local metar = nil
+    local f = io.open(metar_path, "r")
+    if f then
+        for line in f:lines() do
+            local len = icao:len()
+            if line:sub(1, len) == icao then
+                metar = nil
+            end
+        end
+    end
+    return metar
+end
 
 ------------------------------------------------------------------
 -- Scope drawing
@@ -169,7 +188,14 @@ function draw_scope()
     glRectf(0, 0, SCREEN_WIDTH, SCREEN_HIGHT)
     glColor4f(1.0, 1.0, 1.0, scope_alpha)
     if scope_apt then
-        draw_string_Helvetica_18(xc - yc, SCREEN_HIGHT - 60, scope_apt.icao .. " " .. scope_apt.name)
+        local y = SCREEN_HIGHT - 60
+        draw_string_Helvetica_18(xc - yc, y, scope_apt.icao .. " " .. scope_apt.name)
+        if scope_apt.metar then
+            for metar_i in string.gmatch(scope_apt.metar, "%S+") do
+                y = y + 20
+                draw_string_Helvetica_18(xc - yc, y, metar_i)
+            end
+        end
     else
         draw_string_Helvetica_18(xc - yc, SCREEN_HIGHT - 60, "<No airport selected>")
     end
