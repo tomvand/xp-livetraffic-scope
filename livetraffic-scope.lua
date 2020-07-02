@@ -114,7 +114,7 @@ local scope_apt = nil
 
 local scope_enabled = false
 
-local scope_range = 30 -- nm
+local scope_range = 50 -- nm
 local pix_per_nm = SCREEN_HIGHT / (2 * scope_range)
 
 function ltscope_toggle()
@@ -218,6 +218,7 @@ function draw_scope()
     glColor4f(1.0, 1.0, 1.0, scope_alpha)
     graphics.draw_line(xc + x, yc + y, xc + x + dx, yc + y + dy)
     -- Draw livetraffic aircraft
+    local player_alt = get("sim/flightmodel/position/elevation") * 3.2808 -- ft
     local num = get("livetraffic/ac/num")
     for i = 1,num do
         set("livetraffic/ac/key", i) -- Select aircraft by index
@@ -231,7 +232,7 @@ function draw_scope()
         local vspd = get("livetraffic/ac/vsi") -- ft/min?
         -- Draw marker
         local x, y = latlon_to_xypx(ref_lat, ref_lon, lat, lon)
-        if active > 0 then
+        if active > 0 and math.abs(alt - player_alt) < 10000 then
             glColor4f(1.0, 1.0, 1.0, 1.0)
         else
             glColor4f(1.0, 1.0, 1.0, (scope_alpha + 1.0) / 2)
