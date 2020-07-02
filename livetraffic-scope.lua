@@ -181,7 +181,16 @@ function draw_scope()
     local xc = SCREEN_WIDTH / 2
     local yc = SCREEN_HIGHT / 2
     -- Update resolution
-    pix_per_nm = SCREEN_HIGHT / (2 * scope_range)
+    if scope_apt then
+        ref_lat = scope_apt.lat
+        ref_lon = scope_apt.lon
+    end
+    scope_range = 0 -- nm
+    repeat
+        scope_range = scope_range + 30 -- nm
+        pix_per_nm = SCREEN_HIGHT / (2 * scope_range)
+        local x, y = latlon_to_xypx(ref_lat, ref_lon, player_lat, player_lon)
+    until math.sqrt(x*x + y*y) < (SCREEN_HIGHT / 2.5)
     -- Draw scope background
     -- glColor4f(0, 0, 0.5, scope_alpha)
     glColor4f(0, 0, 0, scope_alpha)
@@ -193,10 +202,10 @@ function draw_scope()
         draw_string_Helvetica_18(xc - yc, y, scope_apt.icao .. " " .. scope_apt.name)
         if scope_apt.metar then
             for metar_i in string.gmatch(scope_apt.metar, "%S+") do
+                y = y - 20
                 if not skipped_first then
                     skipped_first = true
                 else
-                    y = y - 20
                     draw_string_Helvetica_18(xc - yc, y, metar_i)
                 end
             end
@@ -211,8 +220,6 @@ function draw_scope()
     end
     -- Draw runways
     if scope_apt then
-        ref_lat = scope_apt.lat
-        ref_lon = scope_apt.lon
         glColor4f(1.0, 1.0, 1.0, scope_alpha)
         graphics.set_width(5)
         for i = 1,#scope_apt.runways do
@@ -348,7 +355,7 @@ end
 function ltscope_select_airport()
     if wnd_select == nil then
         wnd_select_icao = ""
-        wnd_select = float_wnd_create(300, 60, 1, true)
+        wnd_select = float_wnd_create(420, 60, 1, true)
         float_wnd_set_title(wnd_select, "LiveTraffic Scope - Select airport...")
         float_wnd_set_imgui_builder(wnd_select, "wnd_select_builder")
         float_wnd_set_onclose(wnd_select, "wnd_select_close")
