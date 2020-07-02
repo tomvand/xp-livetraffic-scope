@@ -156,8 +156,11 @@ function draw_scope()
     local ref_lon = player_lon
     local xc = SCREEN_WIDTH / 2
     local yc = SCREEN_HIGHT / 2
+    -- Update resolution
+    pix_per_nm = SCREEN_HIGHT / (2 * scope_range)
     -- Draw scope background
-    glColor4f(0, 0, 0.5, scope_alpha)
+    -- glColor4f(0, 0, 0.5, scope_alpha)
+    glColor4f(0, 0, 0, scope_alpha)
     glRectf(0, 0, SCREEN_WIDTH, SCREEN_HIGHT)
     glColor4f(1.0, 1.0, 1.0, scope_alpha)
     if scope_apt then
@@ -201,7 +204,7 @@ function draw_scope()
         dx = 0
         dy = -label_length
     end
-    local lbl_str = tostring(math.floor(alt / 1000 + 0.5))
+    local lbl_str = tostring(math.floor(alt / 100 + 0.5))
     if vspd > 200 then
         lbl_str = lbl_str .. "^"
     elseif vspd < -200 then
@@ -224,7 +227,7 @@ function draw_scope()
         local spd = get("livetraffic/ac/speed") -- knots?
         local active = get("livetraffic/ac/lights/strobe")
         local phase = get("livetraffic/ac/phase")
-        local alt = get("livetraffic/ac/height") * 3.2808 -- ft
+        local alt = get("livetraffic/ac/height") -- ft
         local vspd = get("livetraffic/ac/vsi") -- ft/min?
         -- Draw marker
         local x, y = latlon_to_xypx(ref_lat, ref_lon, lat, lon)
@@ -241,7 +244,7 @@ function draw_scope()
         if active > 0 then
             dx = label_length * math.sin(math.rad(trk + 90))
             dy = label_length * math.cos(math.rad(trk + 90))
-            local lbl_str = tostring(math.floor(alt / 1000 + 0.5))
+            local lbl_str = tostring(math.floor(alt / 100 + 0.5))
             if vspd > 200 then
                 lbl_str = lbl_str .. "^"
             elseif vspd < -200 then
