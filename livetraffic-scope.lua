@@ -129,7 +129,8 @@ end
 ------------------------------------------------------------------
 -- Scope drawing
 ------------------------------------------------------------------
-local scope_apt = nil
+local dep_apt = nil
+local arr_apt = nil
 
 local scope_enabled = false
 
@@ -144,17 +145,26 @@ function ltscope_toggle()
     end
 end
 
-function ltscope_set_icao(icao)
-    scope_apt = get_airport(icao)
-    if scope_apt then
-        return "Set scope to " .. scope_apt.icao .. " " .. scope_apt.name
+function ltscope_set_icao(dep, arr)
+    local msg = ""
+    dep_apt = get_airport(dep)
+    if dep_apt then
+        msg = msg .. "Set departure to " .. dep_apt.icao .. " " .. dep_apt.name .. "; "
     else
-        return "Could not find " .. icao
+        msg = msg .. "Could not find " .. dep .. "; "
     end
+    arr_apt = get_airport(arr)
+    if arr_apt then
+        msg = msg .. "Set arrival to " .. arr_apt.icao .. " " .. arr_apt.name .. "."
+    else
+        msg = msg .. "Could not find " .. arr .. "."
+    end
+    return msg
 end
 
 function ltscope_clear_icao()
-    scope_apt = nil
+    dep_apt = nil
+    arr_apt = nil
     return "Cleared selection"
 end
 
@@ -180,6 +190,21 @@ function draw_scope()
     local ref_lon = player_lon
     local xc = SCREEN_WIDTH / 2
     local yc = SCREEN_HIGHT / 2
+    -- Select closest airport (departure or arrival)
+    local scope_apt = nil
+    local dep_dist2 = 99999
+    if dep_apt then
+        scope_apt = dep_apt
+        local x, y = latlon_to_xypx(dep_apt.lat, dep_apt.lon, player_lat, player_lon)
+        dep_dist2 = x*x + y*y
+    end
+    if arr_apt then
+        local x, y = latlon_to_xypx(dep_apt.lat, dep_apt.lon, player_lat, player_lon)
+        local arr_dist2 = x*x + y*y
+        if arr_dist2 < 3 * dep_dist2 then
+            scope_apt = arr_apt
+        end
+    end
     -- Update resolution
     if scope_apt then
         ref_lat = scope_apt.lat
@@ -190,7 +215,7 @@ function draw_scope()
         scope_range = scope_range + 30 -- nm
         pix_per_nm = SCREEN_HIGHT / (2 * scope_range)
         local x, y = latlon_to_xypx(ref_lat, ref_lon, player_lat, player_lon)
-    until math.sqrt(x*x + y*y) < (SCREEN_HIGHT / 2.5)
+    until math.sqrt(x*x + y*y) < (SCREEN_HIGHT / 3.5)
     -- Draw scope background
     -- glColor4f(0, 0, 0.5, scope_alpha)
     glColor4f(0, 0, 0, scope_alpha)
@@ -327,19 +352,22 @@ create_command("ltscope/toggle", "Toggle LiveTraffic Scope", "ltscope_toggle()",
 -- Select airport window
 ------------------------------------------------------------------
 local wnd_select = nil
-local wnd_select_icao = ""
+local wnd_dep_icao = ""
+local wnd_arr_icao = ""
 local wnd_select_result_msg = ""
 
 function wnd_select_builder()
-    imgui.TextUnformatted("ICAO: ")
-    imgui.SameLine()
-    local changed, newtxt = imgui.InputText("", wnd_select_icao, 10)
-    if changed then
-        wnd_select_icao = newtxt
+    local dep_changed, dep_newtxt = imgui.InputText("Departure Apt", wnd_dep_icao, 8)
+    if dep_changed then
+        wnd_dep_icao = dep_newtxt
+    end
+    local arr_changed, arr_newtxt = imgui.InputText("Arrival Apt", wnd_arr_icao, 8)
+    if arr_changed then
+        wnd_arr_icao = arr_newtxt
     end
     imgui.SameLine()
     if imgui.Button("Set") then
-        wnd_select_result_msg = ltscope_set_icao(string.upper(wnd_select_icao))
+        wnd_select_result_msg = ltscope_set_icao(string.upper(wnd_dep_icao), string.upper(wnd_arr_icao))
     end
     imgui.SameLine()
     if imgui.Button("Clear") then
@@ -355,7 +383,7 @@ end
 function ltscope_select_airport()
     if wnd_select == nil then
         wnd_select_icao = ""
-        wnd_select = float_wnd_create(420, 60, 1, true)
+        wnd_select = float_wnd_create(520, 80, 1, true)
         float_wnd_set_title(wnd_select, "LiveTraffic Scope - Select airport...")
         float_wnd_set_imgui_builder(wnd_select, "wnd_select_builder")
         float_wnd_set_onclose(wnd_select, "wnd_select_close")
